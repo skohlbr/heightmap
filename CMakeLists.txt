@@ -80,11 +80,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES heightmap
 CATKIN_DEPENDS roscpp sensor_msgs std_msgs
 # libmatrixstore is not yet registered as a system dependency
-#  DEPENDS libmatrixstore 
+#  DEPENDS libmatrixstore
 )
 
 ###########
@@ -97,6 +97,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  ./include
   ${catkin_INCLUDE_DIRS}
 )
 
