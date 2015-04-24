@@ -1,0 +1,7 @@
+# The timestamp and the z coordinate of the points is ignored
+geometry_msgs/PointStamped[] samplePoints
+---
+# The points are returned exactly as they were in the request,
+# but with the z coordinate changed
+geometry_msgs/PointStamped[] samples
+
