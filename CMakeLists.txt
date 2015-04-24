@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -17,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+#catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -51,11 +52,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   Query.srv
+   )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -65,10 +65,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  )
 
 ###################################
 ## catkin specific configuration ##
@@ -82,7 +83,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES heightmap
-CATKIN_DEPENDS roscpp sensor_msgs std_msgs
+CATKIN_DEPENDS roscpp sensor_msgs std_msgs tf
 # libmatrixstore is not yet registered as a system dependency
 #  DEPENDS libmatrixstore 
 )
@@ -110,7 +111,7 @@ add_executable(heightmap_node src/heightmap_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(heightmap_node heightmap_generate_messages_cpp)
+add_dependencies(heightmap_node heightmap_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(heightmap_node
