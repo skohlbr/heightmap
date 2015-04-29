@@ -113,8 +113,8 @@ bool handleQuery(heightmap::Query::Request &req,
 	std::vector<double> submap;
 	submap.resize(req.x_resolution * req.y_resolution);
 	
-	for(int i=0; i < req.x_resolution; i++) {
-		for(int j=0; j < req.y_resolution; j++) {
+	for(int i=0; i < req.y_resolution; i++) {
+		for(int j=0; j < req.x_resolution; j++) {
 			geometry_msgs::PointStamped point = req.corner;
 			point.point.x += x_step * i;
 			point.point.y += y_step * j;
