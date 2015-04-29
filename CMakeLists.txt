@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  tf
   message_generation
 )
 
@@ -83,7 +84,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES heightmap
-CATKIN_DEPENDS roscpp sensor_msgs std_msgs tf
+CATKIN_DEPENDS roscpp tf sensor_msgs std_msgs
 # libmatrixstore is not yet registered as a system dependency
 #  DEPENDS libmatrixstore 
 )

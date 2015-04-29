@@ -14,7 +14,7 @@
 #include <tf/transform_listener.h>
 
 template<typename T, typename ... Args>
-std::unique_ptr<T> make_unique(Args&& ...cons_args) {
+std::unique_ptr<T> make_unique(Args&& ... cons_args) {
 	return std::unique_ptr<T>(new T(cons_args...));
 }
 
@@ -77,7 +77,7 @@ void handleInputMessage(const sensor_msgs::PointCloud& msg)
 	
 	if (msg.header.frame_id != map_frame) {
 		transformed = true;
-		auto *new_msg = new sensor_msgs::PointCloud();
+		sensor_msgs::PointCloud *new_msg = new sensor_msgs::PointCloud();
 		tf_listener->transformPointCloud(map_frame, msg, *new_msg);
 		msgp = new_msg;
 	}
@@ -104,33 +104,35 @@ bool handleQuery(heightmap::Query::Request &req,
 				 heightmap::Query::Response &res)
 {
 	ROS_DEBUG("serving request");
+
+	bool need_transform = (req.corner.header.frame_id != map_frame);
 	
-	res.samples = std::move(req.samplePoints);
+	const float x_step = req.x_size / (req.x_resolution - 1);
+	const float y_step = req.y_size / (req.y_resolution - 1);
 
-	for(auto& sample : res.samples) {
-	}
+	std::vector<double> submap;
+	submap.resize(req.x_resolution * req.y_resolution);
+	
+	for(int i=0; i < req.x_resolution; i++) {
+		for(int j=0; j < req.y_resolution; j++) {
+			geometry_msgs::PointStamped point = req.corner;
+			point.point.x += x_step * i;
+			point.point.y += y_step * j;
 
-	std::string cur_frame_id;
-	for(auto& sample : res.samples) {
-		if (sample.header.frame_id != map_frame) {
-			cur_frame_id = sample.header.frame_id;
-			tf_listener->transformPoint(map_frame, sample, sample);
-		}
-		
-		int x = sample.point.x / CELL_SIZE_X;
-		int y = sample.point.x / CELL_SIZE_Y;
-		double double_val;
+			if (need_transform)
+				tf_listener->transformPoint(map_frame, point, point);
 
-		msSparseMatrixRead(sm, &double_val, x, y, 1, 1);
-		
-		sample.point.z = double_val; // double -> float conversion here
-
-		if (!cur_frame_id.empty()) {
-			tf_listener->transformPoint(cur_frame_id, sample, sample);
-			cur_frame_id.clear();
+			int sx = point.point.x / CELL_SIZE_X;
+			int sy = point.point.y / CELL_SIZE_Y;
+			int index = req.x_resolution * i + j;
+			msSparseMatrixRead(sm, &submap[index], sx, sy, 1, 1);
 		}
 	}
 
+	res.x_size = req.x_resolution;
+	res.y_size = req.y_resolution;
+	res.map = std::move(submap);
+		
 	return true;
 }
 

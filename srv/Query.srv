@@ -1,7 +1,19 @@
-# The timestamp and the z coordinate of the points is ignored
-geometry_msgs/PointStamped[] samplePoints
+# Rectangular area to be sampled, understood as axis-aligned with
+# respect to the frame of reference specified by corner.header.frame_id
+geometry_msgs/PointStamped corner
+float64  x_size
+float64  y_size
+
+# Desired resoultion. In the response, x_size and y_size will be equal
+# to these two members of the request
+uint32  x_resolution
+uint32  y_resolution
+
 ---
-# The points are returned exactly as they were in the request,
-# but with the z coordinate changed
-geometry_msgs/PointStamped[] samples
+# X-major (image-like) matrix of heights
+# x_size and y_size always equal to the values of x_resolution and
+# y_resolution (respectively) from the request
+uint32  x_size
+uint32  y_size
+float64[] map
 
