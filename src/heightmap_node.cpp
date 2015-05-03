@@ -1,6 +1,5 @@
 #include "heightmap/Query.h"
-#include "heightmap/pointcloud_iterator.hpp"
-#include "heightmap/utils.hpp"
+#include "heightmap/pointcloud_iterator2.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -86,21 +85,23 @@ void publishVisualization()
 
 	setPointCloudFields(pointcloud);
 
+	const size_t rawDataSize = num_rows * num_cols * 3;
+	float *rawData = new float[rawDataSize];
+	
 	for(int i=0; i < num_rows; i++) {
 		for(int j=0; j < num_cols; j++) {
-			int buf_index = i*num_cols + j;
-			float x = i * CELL_SIZE_X;
-			float y = j * CELL_SIZE_Y;
-			float z = buf[buf_index];
-
-			pointcloud.data.push((uint8_t[sizeof(float)]) x);
-			pointcloud.data.push((uint8_t[sizeof(float)]) y);
-			pointcloud.data.push((uint8_t[sizeof(float)]) z);
-
+			int index = i*num_cols + j;
+			rawData[index*3]     = i * CELL_SIZE_X; // X
+			rawData[index*3 + 1] = j * CELL_SIZE_Y; // Y
+			rawData[index*3 + 2] = buf[index];      // Z
+			
 			// printf("%8.5f %8.5f %8.5f\n",
 			// 	   x, y, z);
 		}
 	}
+
+	pointcloud.data.assign((uint8_t*) rawData,
+						   (uint8_t*) rawData+rawDataSize);
 
 	publisher.publish(pointcloud);
 
@@ -114,7 +115,7 @@ void handleInputMessage(const sensor_msgs::PointCloud2& msg)
 
 	if (msg.header.frame_id != map_frame) {
 		transformed = true;
-		sensor_msgs::PointCloud *new_msg = new sensor_msgs::PointCloud();
+		sensor_msgs::PointCloud2 *new_msg = new sensor_msgs::PointCloud2();
 		
 		if(pcl_ros::transformPointCloud(map_frame,
 										msg, *new_msg,
@@ -126,13 +127,14 @@ void handleInputMessage(const sensor_msgs::PointCloud2& msg)
 		}
 	}
 
-	auto it = heightmap::PointCloud2Iterator<float>::begin(*msgp);
-
+	auto it = heightmap::begin<float>(*msgp);
+	auto it_end = heightmap::end<float>(*msgp);
+	
 	unsigned int iteratedOver = 0;
 	unsigned int updateCount = 0;
 	unsigned int skippedNans = 0;
 
-	for(; it != heightmap::PointCloud2Iterator<float>::end(*msgp); it++) {
+	for(; it != it_end; it++) {
 		iteratedOver++;
 		heightmap::Point<float> point = *it;
 
