@@ -38,9 +38,9 @@ void publishVisualization()
 {
 	if (!pub_mutex.try_lock())
 		return;
-	
+
     ROS_INFO ("Timer ticked: sending message");
-    
+
     if (0 == msSparseMatrixRead(sm, buf, row, col, num_rows, num_cols)) {
         ROS_ERROR("Couldn't read sparse matrix: %s", msGetError());
 		pub_mutex.unlock();
@@ -49,7 +49,7 @@ void publishVisualization()
 
 	sensor_msgs::PointCloud pointcloud;
 	pointcloud.header.frame_id = map_frame;
-	
+
 	for(int i=0; i < num_rows; i++) {
 		for(int j=0; j < num_cols; j++) {
 			int index = i*num_cols + j;
@@ -66,7 +66,7 @@ void publishVisualization()
 	}
 
 	publisher.publish(pointcloud);
-	
+
 	pub_mutex.unlock();
 }
 
@@ -74,14 +74,14 @@ void handleInputMessage(const sensor_msgs::PointCloud& msg)
 {
 	const sensor_msgs::PointCloud *msgp = &msg;
 	bool transformed = false;
-	
+
 	if (msg.header.frame_id != map_frame) {
 		transformed = true;
 		sensor_msgs::PointCloud *new_msg = new sensor_msgs::PointCloud();
 		tf_listener->transformPointCloud(map_frame, msg, *new_msg);
 		msgp = new_msg;
 	}
-	
+
     for(const auto& point : msgp->points) {
         int x = point.x / CELL_SIZE_X;
         int y = point.y / CELL_SIZE_Y;
@@ -96,7 +96,7 @@ void handleInputMessage(const sensor_msgs::PointCloud& msg)
 
 	if (transformed)
 		delete msgp;
-	
+
 	publishVisualization();
 }
 
@@ -106,13 +106,13 @@ bool handleQuery(heightmap::Query::Request &req,
 	ROS_DEBUG("serving request");
 
 	bool need_transform = (req.corner.header.frame_id != map_frame);
-	
+
 	const float x_step = req.x_size / (req.x_resolution - 1);
 	const float y_step = req.y_size / (req.y_resolution - 1);
 
 	std::vector<double> submap;
 	submap.resize(req.x_resolution * req.y_resolution);
-	
+
 	for(int i=0; i < req.y_resolution; i++) {
 		for(int j=0; j < req.x_resolution; j++) {
 			geometry_msgs::PointStamped point = req.corner;
@@ -132,7 +132,7 @@ bool handleQuery(heightmap::Query::Request &req,
 	res.x_size = req.x_resolution;
 	res.y_size = req.y_resolution;
 	res.map = std::move(submap);
-		
+
 	return true;
 }
 
@@ -149,18 +149,18 @@ int main(int argc, char **argv)
     }
 
     buf = new double[num_cols * num_rows];
-	for(int i=0; i < num_rows*num_cols; i++)
-		buf[i] = 0.0f;
-	
+    for(int i=0; i < num_rows*num_cols; i++)
+      buf[i] = 0.0f;
+
     ros::NodeHandle nh;
 
-	tf_listener = make_unique<tf::TransformListener>(nh);
-	map_frame = "map";
-	
+    tf_listener = make_unique<tf::TransformListener>(nh);
+    map_frame = "map";
+
     ros::Subscriber sub = nh.subscribe("pointcloud", 256, handleInputMessage);
     publisher = nh.advertise<sensor_msgs::PointCloud>("heightmap_vis", 1, true);
 
-	ros::ServiceServer service = nh.advertiseService("heightmap_query", handleQuery);
+    ros::ServiceServer service = nh.advertiseService("heightmap_query", handleQuery);
 
     ros::spin();
     return 0;
