@@ -39,27 +39,27 @@ int row=0, col=0, num_rows=100, num_cols=100;
 double *buf;
 
 void setPointCloudFields(sensor_msgs::PointCloud2& pointcloud) {
-  pointcloud.fields.clear();
+	pointcloud.fields.clear();
 
-  sensor_msgs::PointField xField;
-  xField.name='x';
-  xField.offset = 0;
-  xField.datatype = sensor_msgs::PointField::FLOAT32;
-  xField.count = 1;
-  sensor_msgs::PointField yField;
-  yField.name='y';
-  yField.offset = 4;
-  yField.datatype = sensor_msgs::PointField::FLOAT32;
-  yField.count = 1;
-  sensor_msgs::PointField zField;
-  zField.name='z';
-  zField.offset = 8;
-  zField.datatype = sensor_msgs::PointField::FLOAT32;
-  zField.count = 1;
+	sensor_msgs::PointField xField;
+	xField.name='x';
+	xField.offset = 0;
+	xField.datatype = sensor_msgs::PointField::FLOAT32;
+	xField.count = 1;
+	sensor_msgs::PointField yField;
+	yField.name='y';
+	yField.offset = 4;
+	yField.datatype = sensor_msgs::PointField::FLOAT32;
+	yField.count = 1;
+	sensor_msgs::PointField zField;
+	zField.name='z';
+	zField.offset = 8;
+	zField.datatype = sensor_msgs::PointField::FLOAT32;
+	zField.count = 1;
 
-  pointcloud.fields.push_back(xField);
-  pointcloud.fields.push_back(yField);
-  pointcloud.fields.push_back(zField);
+	pointcloud.fields.push_back(xField);
+	pointcloud.fields.push_back(yField);
+	pointcloud.fields.push_back(zField);
 }
 
 void publishVisualization()
@@ -67,47 +67,38 @@ void publishVisualization()
 	if (!pub_mutex.try_lock())
 		return;
 
-  ROS_INFO ("Timer ticked: sending message");
+	ROS_INFO ("Timer ticked: sending message");
 
-  if (0 == msSparseMatrixRead(sm, buf, row, col, num_rows, num_cols)) {
-      ROS_ERROR("Couldn't read sparse matrix: %s", msGetError());
-      pub_mutex.unlock();
-      return;
-  }
+	if (0 == msSparseMatrixRead(sm, buf, row, col, num_rows, num_cols)) {
+		ROS_ERROR("Couldn't read sparse matrix: %s", msGetError());
+		pub_mutex.unlock();
+		return;
+	}
 
 	sensor_msgs::PointCloud2 pointcloud;
 	pointcloud.header.frame_id = map_frame;
-  pointcloud.is_bigendian = false;
-  pointcloud.point_step = 12;
-  pointcloud.is_dense = true;
-  pointcloud.width = num_cols;
-  pointcloud.height = num_rows;
-  pointcloud.row_step= pointcloud.width * pointcloud.point_step;
+	pointcloud.is_bigendian = false;
+	pointcloud.point_step = 12;
+	pointcloud.is_dense = true;
+	pointcloud.width = num_cols;
+	pointcloud.height = num_rows;
+	pointcloud.row_step= pointcloud.width * pointcloud.point_step;
 
-  setPointCloudFields(pointcloud);
+	setPointCloudFields(pointcloud);
 
 	for(int i=0; i < num_rows; i++) {
 		for(int j=0; j < num_cols; j++) {
-			int index = i*num_cols + j;
+			int buf_index = i*num_cols + j;
+			float x = i * CELL_SIZE_X;
+			float y = j * CELL_SIZE_Y;
+			float z = buf[buf_index];
 
-			geometry_msgs::Point32 point;
-			point.x = i * CELL_SIZE_X;
-			point.y = j * CELL_SIZE_Y;
-			point.z = buf[index];
-
-      auto pushFloat = [](std::vector<uint8_t>& vec, float v) {
-        const uint8_t* bytes = heightmap::toByteArrayUnsafe(v);
-        for(int i = 0; i < 4; i++){
-          vec.push_back(bytes[i]);
-        }
-      };
-
-      pushFloat(pointcloud.data, point.x);
-      pushFloat(pointcloud.data, point.y);
-      pushFloat(pointcloud.data, point.z);
+			pointcloud.data.push((uint8_t[sizeof(float)]) x);
+			pointcloud.data.push((uint8_t[sizeof(float)]) y);
+			pointcloud.data.push((uint8_t[sizeof(float)]) z);
 
 			// printf("%8.5f %8.5f %8.5f\n",
-			// 	   point.x, point.y, point.z);
+			// 	   x, y, z);
 		}
 	}
 
@@ -123,45 +114,46 @@ void handleInputMessage(const sensor_msgs::PointCloud2& msg)
 
 	if (msg.header.frame_id != map_frame) {
 		transformed = true;
-		std::unique_ptr<sensor_msgs::PointCloud2> new_msg = make_unique<sensor_msgs::PointCloud2>();
-
-    if(pcl_ros::transformPointCloud(map_frame, msg, *new_msg, *tf_listener)) {
-      msgp = new_msg.get();
-    } else {
-      ROS_WARN("Using identity transform");
-      msgp = &msg;
-    }
-
+		sensor_msgs::PointCloud *new_msg = new sensor_msgs::PointCloud();
+		
+		if(pcl_ros::transformPointCloud(map_frame,
+										msg, *new_msg,
+										*tf_listener)) {
+			msgp = new_msg;
+		} else {
+			ROS_WARN("Using identity transform");
+			msgp = &msg;
+		}
 	}
 
 	auto it = heightmap::PointCloud2Iterator<float>::begin(*msgp);
 
-  unsigned int iteratedOver = 0;
-  unsigned int updateCount = 0;
-  unsigned int skippedNans = 0;
+	unsigned int iteratedOver = 0;
+	unsigned int updateCount = 0;
+	unsigned int skippedNans = 0;
 
-  for(; it != heightmap::PointCloud2Iterator<float>::end(*msgp); it++) {
-    iteratedOver++;
-    heightmap::Point<float> point = *it;
+	for(; it != heightmap::PointCloud2Iterator<float>::end(*msgp); it++) {
+		iteratedOver++;
+		heightmap::Point<float> point = *it;
 
-    if(isnan(point.x) || isnan(point.y) || isnan(point.z)) {
-      skippedNans++;
-      continue;
-    }
+		if(isnan(point.x) || isnan(point.y) || isnan(point.z)) {
+			skippedNans++;
+			continue;
+		}
 
-    int x = point.x / CELL_SIZE_X;
-    int y = point.y / CELL_SIZE_Y;
-    double height = point.z;
+		int x = point.x / CELL_SIZE_X;
+		int y = point.y / CELL_SIZE_Y;
+		double height = point.z;
 
-    double old_height;
+		double old_height;
 
-    msSparseMatrixRead(sm, &old_height, x, y, 1, 1);
-    if (isnan(old_height) || old_height < height) {
-        msSparseMatrixWrite(sm, &height, 1, 1, x, y);
-        updateCount++;
-    }
+		msSparseMatrixRead(sm, &old_height, x, y, 1, 1);
+		if (isnan(old_height) || old_height < height) {
+			msSparseMatrixWrite(sm, &height, 1, 1, x, y);
+			updateCount++;
+		}
 
-  }
+	}
 
 //   ROS_INFO("Iterated over %d, updated %d cells", iteratedOver, updateCount);
 
@@ -218,7 +210,7 @@ int main(int argc, char **argv)
 
     buf = new double[num_cols * num_rows];
     for(int i=0; i < num_rows*num_cols; i++)
-      buf[i] = 0.0f;
+		buf[i] = 0.0f;
 
     ros::NodeHandle nh;
 
