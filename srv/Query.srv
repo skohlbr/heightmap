@@ -1,19 +1,18 @@
-# Rectangular area to be sampled, understood as axis-aligned with
-# respect to the frame of reference specified by corner.header.frame_id
+# Rectangular area to be sampled, axis-aligned to the frame of
+# reference specified by corner.header.frame_id
 geometry_msgs/PointStamped corner
 float64  x_size
 float64  y_size
 
-# Desired resoultion. In the response, x_size and y_size will be equal
+# Desired resolution. In the response, x_size and y_size will be equal
 # to these two members of the request
 uint32  x_resolution
 uint32  y_resolution
 
 ---
-# X-major (image-like) matrix of heights
+# Heightmap, encoded as an X-major
 # x_size and y_size always equal to the values of x_resolution and
 # y_resolution (respectively) from the request
 uint32  x_size
 uint32  y_size
 float64[] map
-
