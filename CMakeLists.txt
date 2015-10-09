@@ -11,11 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   pcl_ros
+  octomap_ros
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -83,13 +83,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+#  INCLUDE_DIRS include
 #  LIBRARIES heightmap
-CATKIN_DEPENDS roscpp tf sensor_msgs std_msgs
-# libmatrixstore is not yet registered as a system dependency
-#  DEPENDS libmatrixstore
+CATKIN_DEPENDS roscpp tf sensor_msgs std_msgs octomap_msgs
 )
-
 ###########
 ## Build ##
 ###########
@@ -102,6 +99,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 include_directories(
   ./include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -110,7 +108,8 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(heightmap_node src/heightmap_node.cpp)
+add_executable(heightmap_node
+  src/heightmap_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -118,9 +117,7 @@ add_dependencies(heightmap_node heightmap_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(heightmap_node
-  ${catkin_LIBRARIES}
-  matrixstore
-  )
+  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -137,11 +134,11 @@ target_link_libraries(heightmap_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS heightmap heightmap_node
+install(TARGETS heightmap_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
@@ -162,10 +159,13 @@ target_link_libraries(heightmap_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_heightmap.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
+catkin_add_gtest(${PROJECT_NAME}-test
+  test/test_sparse_block_matrix.cpp
+  test/test_main.cpp)
+
+#if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+#endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

@@ -2,17 +2,9 @@
 #define POINTCLOUD_POINT_HPP
 
 namespace heightmap {
-
-template <typename T> struct Point {
-  Point() {
-    x = y = z = 0;
-  }
-
-  T x;
-  T y;
-  T z;
-};
-
+	template <typename T> struct Point {
+		T x, y, z;
+	};
 }
 
 #endif // POINTCLOUD_POINT_HPP
