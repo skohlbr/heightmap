@@ -14,15 +14,15 @@
 namespace heightmap
 {
 
-	/// An Index is basically a fixed-size array of numbers with
-	/// arithmetic operations defined on it. Index objects of the same
-	/// type (element type and number must match) can be added,
+	/// An Index is basically a fixed-size array of numbers (a tuple)
+	/// with arithmetic operations defined on it. Index objects of the
+	/// same type (element type and number must match) can be added,
 	/// subtracted and multiplied together element-wise, just like
-	/// tuples in linear algebra.
-	/// They can also be create with the uniform initialization syntax:
-	///    Index<int, 2> idx {3, 4};
-	/// Lastly, `Index<>` means the default `Index<int, 2>` type useful
-	/// for the 2-dimensional matrices used in the rest.
+	/// tuples in linear algebra.  They can also be create with the
+	/// uniform initialization syntax:
+	///		Index<int, 2> idx {3, 4};
+	/// Lastly, `Index<>` means the default `Index<int, 2>` type
+	/// useful for the 2-dimensional matrices used in the rest.
 	template<typename T = int, std::size_t N = 2>
 	struct Index : public std::array<T, N> {
 		Index(std::initializer_list<T> init_list) {
@@ -61,12 +61,13 @@ namespace heightmap
 		}
 	};
 
-	/// Region<T, N> objects denote a rectanglar region in an
+	/// Region<T, N> objects denote a rectangular regions in an
 	/// N-dimensional matrix with indices of type T. The region is
-	/// represented as an offset and size (both in number of
-	/// elements). Regions can be created with unified initialization
-	/// syntax, with the offset and the size as arguments:
-	///   Region<> region { {3,2}, {4,5} };
+	/// represented as an offset and size (both expressed in number of
+	/// elements). Regions can be created with the uniform
+	/// initialization syntax, with the offset and the size as
+	/// arguments:
+	///		Region<> region { {3,2}, {4,5} };
 	template <typename T = int, size_t N = 2>
 	struct Region {
 		typedef T ElementT;
@@ -92,25 +93,28 @@ namespace heightmap
 		}
 	};
 
-	/// An object that exposes gives the structure of a matrix to a
-	/// raw, flat array of numbers.  The array is accessed through a
-	/// pointer of type ElementPtr. Direct access can be performed
-	/// with the subscript operator.
+	/// A MatrixRef gives the structure of a matrix to a raw, flat
+	/// array of numbers.  The array is accessed through a pointer of
+	/// type ElementPtr, given by the user.
 	///
-	/// The template automatically adapts to whatever data type the
-	/// pointer can point to (you can use `MatrixRef::ElementT` to
-	/// refer to this data type). This allows the user to manage the
-	/// array using only MatrixRef with, for example, a shared_ptr as
-	/// underlying pointer type. (`MatrixRef<std::shared_ptr>` is
-	/// already available as an alias simply named `Matrix`).
+	/// The template automatically adapts to the given pointer type:
+	/// it uses a pointer of that type to look at the matrix, and it
+	/// infers what is the data type of each element, (you can use
+	/// `MatrixRef::ElementT` to refer to this data type). This allows
+	/// the user to manage the array in a variety of ways. For
+	/// example, just by using shared_ptr as underlying pointer type
+	/// allows to manage the array memory automatically through
+	/// reference counting. (`MatrixRef<std::shared_ptr>` is already
+	/// available as the alias simply named `Matrix`).
 	///
-	/// A "block reference" to a part of this matrix can be obtained
-	/// through the `cut` and `cut_const` methods. The SliceElementPtr
-	/// template argument determines the pointer type for their result
-	/// (use an appropriate type for the correct flifetime management
-	/// of the array). Using a block reference is the preferred method
-	/// of performing operations on a block (as opposed to computing
-	/// the index manually and using the [] operator repeatedly).
+	/// While direct access can be performed with the subscript
+	/// operator, "block references" are preferred when operations
+	/// must be performed on a region of the matrix. A block reference
+	/// to a part of this matrix can be obtained through the `cut` and
+	/// `cutConst` methods. The SliceElementPtr template argument
+	/// determines the pointer type for their result (you should
+	/// choose an appropriate type to ensure that the array memory is
+	/// properly managed; shared_ptr already works).
 	template <typename ElementPtr,
 	          typename SliceElementPtr = ElementPtr>
 	class MatrixRef {
@@ -136,10 +140,10 @@ namespace heightmap
 		///   `nRows`, `nCols`:
 		///      size of the matrix
 		///   `offset`:
-		///      number of elements to skip beginning from ptr
+		///      number of elements to skip, beginning from ptr, to
+		///      get to the start of the memory region
 		///	  `rowStride`:
 		///	     number of elements to skip between successive rows.
-		///
 		MatrixRef(PtrT ptr,
 		          unsigned nRows, unsigned nCols,
 		          unsigned offset = 0, unsigned rowStride = 0)
@@ -168,11 +172,11 @@ namespace heightmap
 			return ptr_[ flatIndex(index[0], index[1]) ];
 		}
 
-		/// Set all elements in this matrix to the given value.
-		/// (Note that if this MatrixRef is a slice of a bigger
-		/// matrix, only the elements "seen" by this MatrixRef are
-		/// touched; you can use this fact to fill rectangular region
-		/// of a matrix by combining `cut` and `fill`).
+		/// Set all elements in this matrix to the given value.  (Note
+		/// that if this MatrixRef is a slice of a bigger matrix, only
+		/// the elements "seen" by this MatrixRef are touched; you can
+		/// use this property to fill a rectangular region of a matrix
+		/// by combining `cut` and `fill`).
 		void fill(ElementT value) {
 			fill(value, [](const ElementT&,
 			               const ElementT&) { return true; });
@@ -209,8 +213,9 @@ namespace heightmap
 		}
 
 		/// Just like `cut`, but return a ConstSlice that doesn't
-		/// allow to write data. This method can be called on a const MatrixRef.
-		ConstSlice cut_const(Region<> region) const {
+		/// allow to write data. This method can be called on a const
+		/// MatrixRef.
+		ConstSlice cutConst(Region<> region) const {
 			if (!(region.offset[0] >= 0 &&
 			      region.offset[1] >= 0 &&
 			      region.offset[0] + region.size[0] <= n_rows_ &&
@@ -229,7 +234,7 @@ namespace heightmap
 
 		/// Create a copy of the Matrix viewed by this MatrixRef.  The
 		/// new buffer will be created through `create`. This method,
-		/// used in combination with `cut` (or `cut_const`) allows to
+		/// used in combination with `cut` (or `cutConst`) allows to
 		/// copy a region of the matrix to a new external buffer.
 		template <typename CopyPtr = ElementPtr,
 		          typename CopySlicePtr = SliceElementPtr>
@@ -245,7 +250,7 @@ namespace heightmap
 		/// element. `src` must have the exact same size as this
 		/// MatrixRef. To copy only regions of the matrix (meaning
 		/// source, destination, or both), use this method in
-		/// combination with `cut` (`cut_const` is sufficient for the
+		/// combination with `cut` (`cutConst` is sufficient for the
 		/// source).
 		template <typename MatT>
 		void copyFrom(const MatT& src) {
@@ -259,14 +264,15 @@ namespace heightmap
 		/// accepted by the given predicate. The predicate should be a
 		/// callable with the following signature (or equivalent):
 		///
-		///    bool func(const ElementA& a ,const ElementB& b);
+		///    bool func(const ElementA& a, const ElementB& b);
 		///
-		/// where ElementA and ElementT are the types of the elements
+		/// where ElementA and ElementB are the types of the elements
 		/// of this matrix and the source's, respectively. For each
 		/// element, the predicate is called with the current value
-		/// and the potential new value as parameters. If it returns
-		/// false, the element is skipped, and the old value is
-		/// maintained; otherwise, it is regularly transfered.
+		/// and the potential new value as parameters, in this
+		/// order. If it returns false, the element is skipped, and
+		/// the old value is maintained; otherwise, it is regularly
+		/// transferred.
 		template <typename MatT, typename Pred>
 		void copyFrom(const MatT& src, Pred predicate)
 			{
@@ -298,12 +304,14 @@ namespace heightmap
 
 	/// A version of MatrixRef that safely shares the ownership of the
 	/// array it points to with all the other Matrix objects that
-	/// "look at" the same underlying array (this includes its
-	/// slices).  When a Matrix is deleted, the buffer is deleted with
-	/// it only if no other Matrix is still "alive" using the same
-	/// buffer. You can safely pass Matrix objects around to have
-	/// different parts of the program work together on the same data
-	/// buffer (for example, in different, maybe overlapping, regions).
+	/// "look at" the same underlying array (this includes its slices,
+	/// or "block references").  When a Matrix is deleted, and no
+	/// other Matrix is still "alive" using the same underlying
+	/// buffer, then the buffer is deleted with it; otherwise, the
+	/// buffer is left untouched. You can safely pass Matrix objects
+	/// around to have different parts of the program work together on
+	/// the same data buffer (for example, in different region,
+	/// overlapping or not).
 	template<typename ElemT>
 	using Matrix = MatrixRef<boost::shared_array<ElemT>>;
 
@@ -351,7 +359,7 @@ namespace heightmap
 			}
 
 		/// Read a piece of the sparse matrix into `dest`
-		/// The region of interset has its topleft corner at `corner`,
+		/// The region of interest has its top-left corner at `corner`,
 		/// and has the same size as `dest`.
 		template <typename MatT>
 		void read(Index<> corner, MatT dest)
@@ -386,7 +394,7 @@ namespace heightmap
 			Region<> region {corner, matrix.size()};
 
 			for(auto& piece : spliceIntoBlocks(region)) {
-				auto src = matrix.cut_const({piece.position, piece.block.size()});
+				auto src = matrix.cutConst({piece.position, piece.block.size()});
 				piece.block.copyFrom(src, predicate);
 			}
 		}
@@ -408,10 +416,13 @@ namespace heightmap
 			BlockT block;
 		};
 
+		/// Return the coordinates for the top-left corner of the
+		/// block identified by the given BlockId.
 		inline Index<> blockPosition(BlockIdT blockId) const {
 			return blockId * block_size_;
 		}
 
+		/// Get the Block of the block that contains the given element
 		BlockIdT findBlock(Index<> offset) const {
 			Index<> offset_corr = offset;
 			for(int i=0; i < 2; i++)
@@ -428,6 +439,8 @@ namespace heightmap
 			return ret;
 		}
 
+		/// Retrieve the block corresponding to the given Id, or
+		/// create it if it doesn't exist already.
 		BlockT& getBlock(BlockIdT blockIndex) {
 			auto iter = blocks_.find(blockIndex);
 			if (iter != blocks_.end())
@@ -439,7 +452,11 @@ namespace heightmap
 			return insert_res.first->second;
 		}
 
+		/// Take any rectangular region and "splice" it into pieces
+		/// such that each piece fits evenly in a single block, and
+		/// each block contains at most one such piece.
 		std::vector<Piece> spliceIntoBlocks(const Region<>& region) {
+			// Find the coordinates of the pieces
 			std::vector<int> points[2];
 			for(int ax=0; ax < 2; ax++) {
 				int cur = region.offset[ax];
@@ -461,6 +478,8 @@ namespace heightmap
 				points[ax].push_back(last+1);
 			}
 
+			// Cut each piece corresponding to the previously computed
+			// coordinates
 			std::vector<Piece> ret;
 			auto firstBlock = findBlock(region.offset);
 			for(int i=0; i < points[0].size()-1; i++) {
