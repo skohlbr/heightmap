@@ -121,8 +121,10 @@ namespace heightmap
 	public:
 		typedef ElementPtr PtrT;
 		typedef typename std::pointer_traits<PtrT>::element_type ElementT;
+		typedef typename std::pointer_traits<PtrT>::template rebind<const ElementT> ConstPtrT;
+
 		typedef MatrixRef<SliceElementPtr> Slice;
-		typedef typename std::pointer_traits<PtrT>::template rebind<const ElementT> ConstSlicePtr;
+		typedef typename std::pointer_traits<SliceElementPtr>::template rebind<const ElementT> ConstSlicePtr;
 		typedef MatrixRef<ConstSlicePtr> ConstSlice;
 
 		/// Default constructor: construct a "null" MatrixRef.
@@ -470,7 +472,7 @@ namespace heightmap
 
 				assert ((cur%block_size_[ax]) == 0);
 				const int last = region.offset[ax] + region.size[ax] - 1;
-				while (cur < last) {
+				while (cur <= last) {
 					points[ax].push_back(cur);
 					cur += block_size_[ax];
 				}
