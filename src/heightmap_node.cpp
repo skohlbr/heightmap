@@ -59,7 +59,9 @@ int main(int argc, char **argv)
 	tf_listener = make_unique<tf::TransformListener>(nh);
 	auto pcl_sub = nh.subscribe("pointcloud2", 16, handlePointCloudMessage);
 	auto octomap_sub = nh.subscribe("octomap", 16, handleOctomapMessage);
-	nh.advertiseService("heightmap", handleQuery);
+	/// If we don't keep this variable around, the service gets deleted
+	/// right before proceeding to the next statement
+	auto service = nh.advertiseService("heightmap", handleQuery);
 	vis_publisher = nh.advertise<sensor_msgs::PointCloud2>("heightmap_vis", 1, true);
 
 	ROS_INFO("Listening to %s for PointClouds", pcl_sub.getTopic().c_str());
@@ -271,26 +273,30 @@ bool handleQuery(heightmap::Query::Request &req,
 
 	bool need_transform = (req.corner.header.frame_id != map_frame);
 
-	const float x_step = req.x_size / (req.x_resolution - 1);
-	const float y_step = req.y_size / (req.y_resolution - 1);
+	if (req.x_samples == 0 || req.y_samples == 0)
+		return false;
 
-	res.x_size = req.x_resolution;
-	res.y_size = req.y_resolution;
+	const float x_step = req.x_size / (req.x_samples - 1);
+	const float y_step = req.y_size / (req.y_samples - 1);
+
+	res.x_samples = req.x_samples;
+	res.y_samples = req.y_samples;
 	res.map.clear();
-	res.map.resize(req.x_resolution * req.y_resolution);
+	res.map.resize(req.x_samples * req.y_samples);
 
-	for(int i=0; i < req.y_resolution; i++) {
-		for(int j=0; j < req.x_resolution; j++) {
-			geometry_msgs::PointStamped point = req.corner;
-			point.point.x += x_step * i;
-			point.point.y += y_step * j;
+	for(int i=0; i < req.y_samples; i++) {
+		for(int j=0; j < req.x_samples; j++) {
+			geometry_msgs::PointStamped point;
+			point.point.x = req.corner.point.x + x_step * i;
+			point.point.y = req.corner.point.y + y_step * j;
 
 			if (need_transform)
 				tf_listener->transformPoint(map_frame, point, point);
 
 			int sx = point.point.x / CELL_SIZE_X;
 			int sy = point.point.y / CELL_SIZE_Y;
-			int index = req.x_resolution * i + j;
+			int index = req.x_samples * i + j;
+
 			res.map[index] = h[{sx, sy}];
 		}
 	}

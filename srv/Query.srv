@@ -6,13 +6,13 @@ float64  y_size
 
 # Desired resolution. In the response, x_size and y_size will be equal
 # to these two members of the request
-uint32  x_resolution
-uint32  y_resolution
+uint32  x_samples
+uint32  y_samples
 
 ---
 # Heightmap, encoded as an X-major
-# x_size and y_size always equal to the values of x_resolution and
-# y_resolution (respectively) from the request
-uint32  x_size
-uint32  y_size
+# x_samples and y_samples are always equal to the values of x_samples and
+# y_samples from the request (respectively)
+uint32  x_samples
+uint32  y_samples
 float64[] map
