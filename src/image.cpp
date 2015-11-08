@@ -48,37 +48,12 @@ Image Image::loadFile(const std::string &filename)
 	return Image(img);
 }
 
-Image Image::fromData(MatrixRef<double*> data)
-{
-	ensureDevilInit();
-
-	ILuint img;
-
-	ilGenImages(1, &img);
-	ilBindImage(img);
-
-	if (!data.isCompact())
-		data = data.copy();
-
-	unsigned int width = data.cols();
-	unsigned int height = data.rows();
-	ilTexImage(width, height,
-	           1,  // non-3D image
-	           1,  // # of channels
-	           IL_LUMINANCE,  // Format
-	           IL_DOUBLE,     // Element data type
-	           /// Violates const correctness. Oh, well...
-	           (double*) data.rawPtr());
-
-	return Image(img);
-}
-
 MatrixRef<double*> Image::data()
 {
 	if (isNull())
 		return {};  // Return a null MatrixRef
 
-	ilBindImage(img_);
+	ilBindImage(handle_);
 	double *data = (double*) ilGetData();
 	unsigned int n_rows = ilGetInteger(IL_IMAGE_HEIGHT);
 	unsigned int n_cols = ilGetInteger(IL_IMAGE_WIDTH);

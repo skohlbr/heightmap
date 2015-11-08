@@ -35,7 +35,7 @@ static const float CELL_SIZE_Y = 1. / RESOLUTION_Y;
 static const std::string map_frame = "map";
 std::unique_ptr<tf::TransformListener> tf_listener;
 
-SparseMatrix<double> h { {64, 64}, NAN };
+SparseMatrix<double> h { {512, 512}, NAN };
 Matrix<double> vis_buf = Matrix<double>::create(100, 100);
 ros::Publisher vis_publisher;
 
@@ -139,7 +139,7 @@ void setPointCloudFields(sensor_msgs::PointCloud2& pointcloud)
 
 void publishVisualization()
 {
-	ROS_INFO ("Timer ticked: publishing visualization");
+	// ROS_INFO ("Timer ticked: publishing visualization");
 
 	h.read({0, 0}, vis_buf);
 
