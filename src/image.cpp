@@ -39,7 +39,7 @@ Image Image::loadFile(const std::string &filename)
 	}
 
 	// Let DevIL do the hard work for us
-	if (!ilConvertImage(IL_LUMINANCE, IL_DOUBLE)) {
+	if (ilConvertImage(IL_LUMINANCE, IL_DOUBLE) != IL_TRUE) {
 		ROS_ERROR("%s: couldn't convert to single-channel float: %s\n",
 		          filename.c_str(), ilGetString(ilGetError()));
 		return Image();
