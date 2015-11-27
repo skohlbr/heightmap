@@ -277,8 +277,10 @@ bool handleQuery(heightmap::Query::Request &req,
 	if (req.x_samples == 0 || req.y_samples == 0)
 		return false;
 
-	const float x_step = req.x_size / (req.x_samples - 1);
-	const float y_step = req.y_size / (req.y_samples - 1);
+	// If [xy]_samples (in the request) is 1, [xy]_step won't be used,
+	// so any value is fine (and 0 is as good as anyone else)
+	const float x_step = req.x_samples == 1 ? 0 : req.x_size / (req.x_samples - 1);
+	const float y_step = req.y_samples == 1 ? 0 : req.y_size / (req.y_samples - 1);
 
 	res.x_samples = req.x_samples;
 	res.y_samples = req.y_samples;
