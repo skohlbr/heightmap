@@ -28,10 +28,10 @@ compilation like this:
 
 You can run the node with `rosrun`, like any other ROS node.
 
-The initial height map can be loaded from a file by appending `load <filename>`
+The initial height map can be loaded from a file by appending `--load <filename>`
 to the command line. The image file *filename* will be
 loaded and written to the height map with the corner at the origin
-(coordinates `0,0`). 
+(coordinates `0,0`).
 
 Please note that the image's pixels are mapped
 1:1 to the elements of the heightmap: any resolution information carried by the file is completely ignored, and no scaling is
