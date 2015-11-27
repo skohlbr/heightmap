@@ -269,7 +269,8 @@ void handleOctomapMessage(const octomap_msgs::Octomap& msg)
 bool handleQuery(heightmap::Query::Request &req,
                  heightmap::Query::Response &res)
 {
-	ROS_DEBUG("serving request");
+	ROS_INFO("serving request (in TF `%s')",
+	          req.corner.header.frame_id.c_str());
 
 	bool need_transform = (req.corner.header.frame_id != map_frame);
 
@@ -286,9 +287,10 @@ bool handleQuery(heightmap::Query::Request &req,
 
 	for(int i=0; i < req.y_samples; i++) {
 		for(int j=0; j < req.x_samples; j++) {
-			geometry_msgs::PointStamped point;
-			point.point.x = req.corner.point.x + x_step * i;
-			point.point.y = req.corner.point.y + y_step * j;
+			geometry_msgs::PointStamped point = req.corner;
+			assert (req.corner.header.stamp == point.header.stamp);
+			point.point.x = req.corner.point.x + x_step * j;
+			point.point.y = req.corner.point.y + y_step * i;
 
 			if (need_transform)
 				tf_listener->transformPoint(map_frame, point, point);
