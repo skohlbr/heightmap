@@ -28,9 +28,13 @@ compilation like this:
 
 You can run the node with `rosrun`, like any other ROS node.
 
-The initial height map can be loaded from a file by append `load
-<filename>` to the command line. The image file `filename` will be
+The initial height map can be loaded from a file by appending `load <filename>`
+to the command line. The image file *filename* will be
 loaded and written to the height map with the corner at the origin
-(`0,0` coordinates). Please note that the image's pixels are mapped
-1:1 to the elements of the heightmap: no resolution adaptation is
-performed at all.
+(coordinates `0,0`). 
+
+Please note that the image's pixels are mapped
+1:1 to the elements of the heightmap: any resolution information carried by the file is completely ignored, and no scaling is
+performed at all. This means that among the options usually offered by graphics editing programs (like GIMP or Photoshop) to save an image, only the "pixel size" will be taken into account, while the document size (like in inches or cm) or the resolution in DPI is entirely ignored.
+
+For the same reason, if you want to export the heightmap from one instance of the node and then import it into another, you should never forget to check the resolution of both nodes, and scale the image to the appropriate resolution.
